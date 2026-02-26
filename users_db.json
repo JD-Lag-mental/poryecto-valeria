@@ -1,0 +1,9 @@
+{
+  "admin": {
+    "username": "admin",
+    "email": "admin@valeria.local",
+    "hashed_password": null,
+    "is_admin": true,
+    "is_active": true
+  }
+}

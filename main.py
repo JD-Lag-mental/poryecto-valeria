@@ -70,8 +70,14 @@ PERFORMANCE (Total v1-v4):
 # [MEJORA v2] Imports con type hints
 from fastapi import FastAPI, HTTPException, Request, Depends, status
 from fastapi.responses import HTMLResponse, JSONResponse
-# [MEJORA v2] GZIPMiddleware para comprimir respuestas
-from fastapi.middleware.gzip import GZIPMiddleware
+# [MEJORA v2] GZIPMiddleware para comprimir respuestas (compatible con varias versiones)
+try:
+    from starlette.middleware.gzip import GZipMiddleware as GZIPMiddleware
+except ImportError:
+    try:
+        from fastapi.middleware.gzip import GZipMiddleware as GZIPMiddleware
+    except ImportError:
+        GZIPMiddleware = None
 # [MEJORA v3] CORSMiddleware para seguridad
 from fastapi.middleware.cors import CORSMiddleware
 # [MEJORA v2] Pydantic para validación mejorada
@@ -128,11 +134,11 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # [MEJORA v4] Archivo JSON para persistencia de usuarios
 USERS_DB_FILE = Path("users_db.json")
 
-# [MEJORA v4] Usuario admin por defecto
+# [MEJORA v4] Usuario admin por defecto (contraseña será hasheada al inicializar)
 DEFAULT_ADMIN = {
     "username": "admin",
     "email": "admin@valeria.local",
-    "hashed_password": pwd_context.hash("admin123"),
+    "hashed_password": None,  # Se hashea al inicializar
     "is_admin": True,
     "is_active": True
 }
@@ -162,9 +168,13 @@ def guardar_usuarios(usuarios: dict):
 # [MEJORA v4] Inicializar BD de usuarios
 USUARIOS = cargar_usuarios()
 if "admin" not in USUARIOS:
-    USUARIOS["admin"] = DEFAULT_ADMIN
+    # Hashear contraseña al inicializar
+    admin_user = DEFAULT_ADMIN.copy()
+    admin_user["hashed_password"] = pwd_context.hash("admin123")
+    USUARIOS["admin"] = admin_user
     guardar_usuarios(USUARIOS)
     logger.info("Usuario admin creado: admin / admin123")
+
 
 # ==================== INICIALIZAR FASTAPI ====================
 app = FastAPI(
@@ -177,10 +187,11 @@ app = FastAPI(
 
 # ==================== MIDDLEWARES DE SEGURIDAD ====================
 
-# 1. GZIP Compression
-app.add_middleware(GZIPMiddleware, minimum_size=1000)
+# [MEJORA v2] 1. GZIP Compression
+if GZIPMiddleware:
+    app.add_middleware(GZIPMiddleware, minimum_size=1000)
 
-# 2. CORS - Configuración Segura
+# [MEJORA v3] 2. CORS - Configuración Segura
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -409,7 +420,8 @@ async def obtener_usuario_actual(request: Request) -> dict:
 
 # [MEJORA v4] Dependency para verificar permisos de admin
 async def obtener_usuario_admin(usuario: dict = Depends(obtener_usuario_actual)) -> dict:
-    """Dependency para verificar que el usuario sea admin.\"\"\"\n    if not usuario.get("is_admin"):
+    """Dependency para verificar que el usuario sea admin."""
+    if not usuario.get("is_admin"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Se requieren permisos de administrador"
