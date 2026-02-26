@@ -1,3 +1,24 @@
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
+# Framework web asincrónico
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+
+# Manejo de zonas horarias
 pytz==2024.1
+
+# Rendimiento
+uvloop==0.19.0
+
+# Validación de datos
+pydantic==2.6.0
+
+# Seguridad - Autenticación JWT
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.1.1
+
+# Configuración
+python-dotenv==1.0.0
+
+# Optional: Dependencias futuras de seguridad
+# fastapi-limiter2==0.1.5  # Rate limiting mejorado con Redis
+# sqlalchemy==2.0.0        # Base de datos persistente
