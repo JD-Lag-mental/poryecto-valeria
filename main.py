@@ -488,157 +488,321 @@ def read_root(request: Request):
         <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
         <title>Reloj Interactivo - Valeria</title>
         <style>
-            /* Reinicia todos los estilos por defecto del navegador */
+            /* ============ GLASSMORPHISM v5.0.0 ============ */
             * { margin: 0; padding: 0; box-sizing: border-box; }
             
-            /* Estilos del cuerpo: fondo gradiente, centrado y responsive */
+            /* Fondo: Gradiente dinámico con efecto movimiento */
             body {
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+                background-size: 400% 400%;
                 min-height: 100vh;
                 display: flex;
                 justify-content: center;
                 align-items: center;
                 padding: 20px;
+                animation: gradientShift 15s ease infinite;
+                overflow-x: hidden;
             }
             
-            /* Contenedor principal: caja blanca con sombra y bordes redondeados */
+            /* Animación de fondo gradiente */
+            @keyframes gradientShift {
+                0% { background-position: 0% 50%; }
+                50% { background-position: 100% 50%; }
+                100% { background-position: 0% 50%; }
+            }
+            
+            /* Contenedor: Efecto Glassmorphism (cristal) */
             .container {
-                background: white;
-                border-radius: 20px;
-                padding: 40px;
-                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-                max-width: 900px;
+                background: rgba(255, 255, 255, 0.15);  /* Translúcido */
+                backdrop-filter: blur(10px);            /* Efecto cristal */
+                border: 1px solid rgba(255, 255, 255, 0.2);  /* Borde sutil */
+                border-radius: 25px;
+                padding: 50px;
+                max-width: 920px;
                 width: 100%;
+                box-shadow: 
+                    0 8px 32px 0 rgba(31, 38, 135, 0.37),  /* Sombra interna */
+                    inset 0 0 20px rgba(255, 255, 255, 0.3);  /* Brillo interno */
+                transition: all 0.3s ease;
+                transform: translateZ(0);
             }
             
-            /* Título principal: grande, centrado y oscuro */
+            .container:hover {
+                box-shadow: 
+                    0 8px 48px 0 rgba(31, 38, 135, 0.5),
+                    inset 0 0 30px rgba(255, 255, 255, 0.4);
+                transform: translateY(-2px);
+            }
+            
+            /* Título con efecto de brillo */
             h1 {
                 text-align: center;
-                color: #333;
-                margin-bottom: 30px;
-                font-size: 2.5em;
+                color: #ffffff;
+                margin-bottom: 40px;
+                font-size: 3em;
+                text-shadow: 
+                    0 0 20px rgba(255, 255, 255, 0.5),
+                    0 0 40px rgba(35, 213, 171, 0.3);
+                letter-spacing: 2px;
+                animation: titleGlow 2s ease-in-out infinite;
             }
             
-            /* Grilla para las tarjetas de reloj: responsive con 4 columnas máximo */
+            @keyframes titleGlow {
+                0%, 100% { text-shadow: 0 0 20px rgba(255, 255, 255, 0.5), 0 0 40px rgba(35, 213, 171, 0.3); }
+                50% { text-shadow: 0 0 30px rgba(255, 255, 255, 0.8), 0 0 60px rgba(35, 213, 171, 0.5); }
+            }
+            
+            /* Grilla de tarjetas: 2 columnas en móvil, 5 en desktop */
             .reloj-grid {
                 display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                gap: 20px;
-                margin-bottom: 30px;
+                grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+                gap: 25px;
+                margin-bottom: 40px;
             }
             
-            /* Tarjeta individual de reloj con gradiente y efecto hover */
+            /* Tarjeta individual: Glassmorphism mejorado */
             .reloj-card {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                padding: 20px;
-                border-radius: 15px;
+                background: rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(5px);
+                border: 1px solid rgba(255, 255, 255, 0.25);
+                border-radius: 20px;
+                padding: 25px 15px;
                 text-align: center;
-                color: white;
+                color: #ffffff;
                 cursor: pointer;
-                transition: transform 0.3s, box-shadow 0.3s;
-                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+                transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+                position: relative;
+                overflow: hidden;
+                box-shadow: 
+                    0 4px 15px rgba(0, 0, 0, 0.1),
+                    inset 0 0 15px rgba(255, 255, 255, 0.1);
             }
             
-            /* Efecto hover: eleva la tarjeta y aumenta la sombra */
+            /* Efecto 3D en hover */
+            .reloj-card::before {
+                content: '';
+                position: absolute;
+                top: -50%;
+                left: -50%;
+                width: 200%;
+                height: 200%;
+                background: radial-gradient(circle, rgba(255,255,255,0.3), transparent);
+                opacity: 0;
+                transition: opacity 0.4s;
+            }
+            
+            .reloj-card:hover::before {
+                opacity: 1;
+            }
+            
             .reloj-card:hover {
-                transform: translateY(-5px);
-                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+                transform: 
+                    translateY(-8px) 
+                    scale(1.05) 
+                    rotateX(5deg);
+                background: rgba(255, 255, 255, 0.2);
+                box-shadow: 
+                    0 10px 40px rgba(0, 0, 0, 0.2),
+                    inset 0 0 25px rgba(255, 255, 255, 0.2),
+                    0 0 20px rgba(35, 213, 171, 0.3);
+                border-color: rgba(255, 255, 255, 0.4);
             }
             
-            /* Nombre del país en la tarjeta */
+            /* Nombre del país */
             .pais {
-                font-size: 1.2em;
-                font-weight: bold;
-                margin-bottom: 10px;
-                text-transform: capitalize;
+                font-size: 0.9em;
+                font-weight: 700;
+                margin-bottom: 15px;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                color: rgba(255, 255, 255, 0.9);
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
             }
             
-            /* Hora mostrada en fuente monoespaciada para mejor legibilidad */
+            /* Hora: Efecto 3D esfera digital */
             .hora {
-                font-size: 1.8em;
+                font-size: 1.6em;
                 font-family: 'Courier New', monospace;
-                font-weight: bold;
+                font-weight: 900;
+                color: #ffffff;
+                text-shadow: 
+                    0 0 10px rgba(35, 213, 171, 0.8),
+                    0 0 20px rgba(255, 255, 255, 0.4);
+                letter-spacing: 2px;
+                animation: pulseHora 1s ease-in-out infinite;
             }
             
-            /* Contenedor para la barra de búsqueda */
+            @keyframes pulseHora {
+                0%, 100% { 
+                    text-shadow: 
+                        0 0 10px rgba(35, 213, 171, 0.8),
+                        0 0 20px rgba(255, 255, 255, 0.4);
+                    transform: scale(1);
+                }
+                50% { 
+                    text-shadow: 
+                        0 0 20px rgba(35, 213, 171, 1),
+                        0 0 40px rgba(255, 255, 255, 0.6);
+                    transform: scale(1.02);
+                }
+            }
+            
+            /* Contenedor del input */
             .input-container {
-                margin-bottom: 20px;
-                text-align: center;
+                display: flex;
+                justify-content: center;
+                gap: 15px;
+                margin-bottom: 30px;
+                flex-wrap: wrap;
             }
             
-            /* Input de búsqueda: estilizado con bordes y sombra */
+            /* Input search: Glassmorphism */
             input {
-                padding: 10px 15px;
-                border: 2px solid #667eea;
-                border-radius: 8px;
-                font-size: 1em;
+                padding: 12px 20px;
+                background: rgba(255, 255, 255, 0.15);
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                border-radius: 12px;
+                font-size: 0.95em;
                 width: 100%;
-                max-width: 300px;
+                max-width: 350px;
+                color: #ffffff;
+                backdrop-filter: blur(5px);
+                transition: all 0.3s;
+                box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
             }
             
-            /* Botón de búsqueda: color gradiente con transición */
+            input::placeholder {
+                color: rgba(255, 255, 255, 0.6);
+            }
+            
+            input:focus {
+                outline: none;
+                background: rgba(255, 255, 255, 0.25);
+                border-color: rgba(255, 255, 255, 0.5);
+                box-shadow: 
+                    inset 0 0 15px rgba(0, 0, 0, 0.1),
+                    0 0 20px rgba(35, 213, 171, 0.5);
+                transform: translateY(-2px);
+            }
+            
+            /* Botón: Glassmorphism mejorado */
             button {
-                padding: 10px 20px;
-                margin-left: 10px;
-                background: #667eea;
-                color: white;
-                border: none;
-                border-radius: 8px;
+                padding: 12px 25px;
+                background: rgba(35, 213, 171, 0.3);
+                border: 1px solid rgba(35, 213, 171, 0.6);
+                border-radius: 12px;
+                color: #ffffff;
                 cursor: pointer;
-                font-size: 1em;
-                font-weight: bold;
-                transition: background 0.3s;
+                font-size: 0.95em;
+                font-weight: 600;
+                transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+                backdrop-filter: blur(5px);
+                box-shadow: 
+                    0 4px 10px rgba(0, 0, 0, 0.1),
+                    inset 0 0 10px rgba(255, 255, 255, 0.1);
+                letter-spacing: 1px;
             }
             
-            /* Botón al pasar el mouse: cambia color */
             button:hover {
-                background: #764ba2;
+                background: rgba(35, 213, 171, 0.5);
+                border-color: rgba(35, 213, 171, 1);
+                box-shadow: 
+                    0 8px 25px rgba(35, 213, 171, 0.4),
+                    0 0 20px rgba(35, 213, 171, 0.3);
+                transform: translateY(-3px) scale(1.05);
             }
             
-            /* Sección de países disponibles al final */
+            button:active {
+                transform: translateY(-1px) scale(0.98);
+            }
+            
+            /* Sección de países disponibles */
             .paises-disponibles {
-                margin-top: 30px;
+                margin-top: 40px;
                 padding-top: 30px;
-                border-top: 2px solid #eee;
+                border-top: 1px solid rgba(255, 255, 255, 0.2);
             }
             
-            /* Título de la sección de países */
             .paises-disponibles h3 {
-                color: #333;
-                margin-bottom: 10px;
+                color: rgba(255, 255, 255, 0.95);
+                margin-bottom: 15px;
+                font-size: 1.1em;
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
             }
             
-            /* Lista de países: flex para distribuirlos en fila */
+            /* Lista de países: Tags clicables */
             .paises-lista {
                 display: flex;
                 flex-wrap: wrap;
                 gap: 10px;
             }
             
-            /* Botones de país individuales: tags clicables */
+            /* Tags de país: Glassmorphism mini */
             .pais-tag {
-                background: #f0f0f0;
-                padding: 8px 12px;
+                background: rgba(255, 255, 255, 0.1);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                padding: 8px 15px;
                 border-radius: 20px;
-                font-size: 0.9em;
-                color: #333;
+                font-size: 0.85em;
+                color: rgba(255, 255, 255, 0.85);
+                cursor: pointer;
+                transition: all 0.3s;
+                backdrop-filter: blur(5px);
             }
             
-            /* Mensaje de seguridad */
+            .pais-tag:hover {
+                background: rgba(35, 213, 171, 0.3);
+                border-color: rgba(35, 213, 171, 0.6);
+                color: #ffffff;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(35, 213, 171, 0.3);
+            }
+            
+            /* Badge de seguridad */
             .security-badge {
                 text-align: center;
                 font-size: 0.8em;
-                color: #666;
-                margin-top: 20px;
-                padding-top: 20px;
-                border-top: 1px solid #eee;
+                color: rgba(255, 255, 255, 0.7);
+                margin-top: 25px;
+                padding-top: 25px;
+                border-top: 1px solid rgba(255, 255, 255, 0.2);
+                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            }
+            
+            /* Responsive: Móviles */
+            @media (max-width: 768px) {
+                .container {
+                    padding: 30px 20px;
+                }
+                
+                h1 {
+                    font-size: 2em;
+                    margin-bottom: 25px;
+                }
+                
+                .reloj-grid {
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 15px;
+                }
+                
+                .input-container {
+                    flex-direction: column;
+                }
+                
+                input {
+                    max-width: 100%;
+                }
+                
+                button {
+                    width: 100%;
+                }
             }
         </style>
     </head>
     <body>
         <div class="container">
-            <h1>🕐 Reloj Interactivo</h1>
+            <h1>🌍 VALERIA ⏰</h1>
             
             <div class="input-container">
                 <input 
@@ -660,7 +824,7 @@ def read_root(request: Request):
             </div>
             
             <div class="security-badge">
-                🔒 Conexión segura | v3.0.0 | Rate Limited
+                ✨ v5.0.0 GLASSMORPHISM | 🔒 JWT Seguro | 🎨 UI/UX Mejorado | 🌐 Rate Limited
             </div>
         </div>
 
