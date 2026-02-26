@@ -488,13 +488,43 @@ def read_root(request: Request):
         <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
         <title>Reloj Interactivo - Valeria</title>
         <style>
-            /* ============ GLASSMORPHISM v5.0.0 ============ */
+            /* ============ GLASSMORPHISM v5.1.0 + DARK MODE ============ */
+            
+            /* [v5.1] CSS Custom Properties para temas */
+            :root {
+                --primary-gradient: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+                --dark-gradient: linear-gradient(-45deg, #0f0f1e, #1a1a3e, #0a2e4a, #0d2e2e);
+                --text-color: #ffffff;
+                --card-bg: rgba(255, 255, 255, 0.1);
+                --card-bg-hover: rgba(255, 255, 255, 0.2);
+                --border-color: rgba(255, 255, 255, 0.2);
+                --border-color-hover: rgba(255, 255, 255, 0.4);
+                --shadow-color: rgba(31, 38, 135, 0.37);
+                --input-bg: rgba(255, 255, 255, 0.15);
+                --input-border: rgba(255, 255, 255, 0.3);
+                --glow-color: rgba(35, 213, 171, 0.8);
+            }
+            
+            /* [v5.1] Dark Mode - Tema oscuro */
+            body.dark-mode {
+                --primary-gradient: linear-gradient(-45deg, #0f0f1e, #1a1a3e, #0a2e4a, #0d2e2e);
+                --text-color: #e0e0e0;
+                --card-bg: rgba(20, 20, 40, 0.5);
+                --card-bg-hover: rgba(35, 35, 70, 0.6);
+                --border-color: rgba(100, 100, 150, 0.3);
+                --border-color-hover: rgba(100, 150, 200, 0.5);
+                --shadow-color: rgba(0, 0, 0, 0.7);
+                --input-bg: rgba(30, 30, 50, 0.4);
+                --input-border: rgba(100, 100, 150, 0.3);
+                --glow-color: rgba(100, 200, 255, 0.8);
+            }
+            
             * { margin: 0; padding: 0; box-sizing: border-box; }
             
             /* Fondo: Gradiente dinámico con efecto movimiento */
             body {
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+                background: var(--primary-gradient);
                 background-size: 400% 400%;
                 min-height: 100vh;
                 display: flex;
@@ -503,6 +533,7 @@ def read_root(request: Request):
                 padding: 20px;
                 animation: gradientShift 15s ease infinite;
                 overflow-x: hidden;
+                transition: background 0.6s ease, background-color 0.6s ease;
             }
             
             /* Animación de fondo gradiente */
@@ -512,45 +543,77 @@ def read_root(request: Request):
                 100% { background-position: 0% 50%; }
             }
             
+            /* [v5.1] Toggle Dark Mode Button */
+            .theme-toggle {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: rgba(35, 213, 171, 0.3);
+                border: 1px solid rgba(35, 213, 171, 0.6);
+                border-radius: 50%;
+                width: 50px;
+                height: 50px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.5em;
+                transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+                backdrop-filter: blur(5px);
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+                z-index: 1000;
+            }
+            
+            .theme-toggle:hover {
+                background: rgba(35, 213, 171, 0.5);
+                transform: scale(1.1) rotate(20deg);
+                box-shadow: 0 8px 25px rgba(35, 213, 171, 0.4);
+            }
+            
+            .theme-toggle:active {
+                transform: scale(0.95);
+            }
+            
             /* Contenedor: Efecto Glassmorphism (cristal) */
             .container {
-                background: rgba(255, 255, 255, 0.15);  /* Translúcido */
-                backdrop-filter: blur(10px);            /* Efecto cristal */
-                border: 1px solid rgba(255, 255, 255, 0.2);  /* Borde sutil */
+                background: var(--card-bg);
+                backdrop-filter: blur(10px);
+                border: 1px solid var(--border-color);
                 border-radius: 25px;
                 padding: 50px;
                 max-width: 920px;
                 width: 100%;
                 box-shadow: 
-                    0 8px 32px 0 rgba(31, 38, 135, 0.37),  /* Sombra interna */
-                    inset 0 0 20px rgba(255, 255, 255, 0.3);  /* Brillo interno */
-                transition: all 0.3s ease;
+                    0 8px 32px 0 var(--shadow-color),
+                    inset 0 0 20px rgba(255, 255, 255, 0.15);
+                transition: all 0.6s ease;
                 transform: translateZ(0);
             }
             
             .container:hover {
                 box-shadow: 
-                    0 8px 48px 0 rgba(31, 38, 135, 0.5),
-                    inset 0 0 30px rgba(255, 255, 255, 0.4);
+                    0 8px 48px 0 var(--shadow-color),
+                    inset 0 0 30px rgba(255, 255, 255, 0.2);
                 transform: translateY(-2px);
             }
             
             /* Título con efecto de brillo */
             h1 {
                 text-align: center;
-                color: #ffffff;
+                color: var(--text-color);
                 margin-bottom: 40px;
                 font-size: 3em;
                 text-shadow: 
                     0 0 20px rgba(255, 255, 255, 0.5),
-                    0 0 40px rgba(35, 213, 171, 0.3);
+                    0 0 40px var(--glow-color);
                 letter-spacing: 2px;
                 animation: titleGlow 2s ease-in-out infinite;
+                transition: all 0.6s ease;
             }
             
             @keyframes titleGlow {
-                0%, 100% { text-shadow: 0 0 20px rgba(255, 255, 255, 0.5), 0 0 40px rgba(35, 213, 171, 0.3); }
-                50% { text-shadow: 0 0 30px rgba(255, 255, 255, 0.8), 0 0 60px rgba(35, 213, 171, 0.5); }
+                0%, 100% { text-shadow: 0 0 20px rgba(255, 255, 255, 0.5), 0 0 40px var(--glow-color); }
+                50% { text-shadow: 0 0 30px rgba(255, 255, 255, 0.8), 0 0 60px var(--glow-color); }
             }
             
             /* Grilla de tarjetas: 2 columnas en móvil, 5 en desktop */
@@ -563,19 +626,19 @@ def read_root(request: Request):
             
             /* Tarjeta individual: Glassmorphism mejorado */
             .reloj-card {
-                background: rgba(255, 255, 255, 0.1);
+                background: var(--card-bg);
                 backdrop-filter: blur(5px);
-                border: 1px solid rgba(255, 255, 255, 0.25);
+                border: 1px solid var(--border-color);
                 border-radius: 20px;
                 padding: 25px 15px;
                 text-align: center;
-                color: #ffffff;
+                color: var(--text-color);
                 cursor: pointer;
                 transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
                 position: relative;
                 overflow: hidden;
                 box-shadow: 
-                    0 4px 15px rgba(0, 0, 0, 0.1),
+                    0 4px 15px var(--shadow-color),
                     inset 0 0 15px rgba(255, 255, 255, 0.1);
             }
             
@@ -601,12 +664,12 @@ def read_root(request: Request):
                     translateY(-8px) 
                     scale(1.05) 
                     rotateX(5deg);
-                background: rgba(255, 255, 255, 0.2);
+                background: var(--card-bg-hover);
                 box-shadow: 
-                    0 10px 40px rgba(0, 0, 0, 0.2),
+                    0 10px 40px var(--shadow-color),
                     inset 0 0 25px rgba(255, 255, 255, 0.2),
-                    0 0 20px rgba(35, 213, 171, 0.3);
-                border-color: rgba(255, 255, 255, 0.4);
+                    0 0 20px var(--glow-color);
+                border-color: var(--border-color-hover);
             }
             
             /* Nombre del país */
@@ -616,8 +679,9 @@ def read_root(request: Request):
                 margin-bottom: 15px;
                 text-transform: uppercase;
                 letter-spacing: 1px;
-                color: rgba(255, 255, 255, 0.9);
-                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                color: var(--text-color);
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+                transition: color 0.6s ease;
             }
             
             /* Hora: Efecto 3D esfera digital */
@@ -625,24 +689,25 @@ def read_root(request: Request):
                 font-size: 1.6em;
                 font-family: 'Courier New', monospace;
                 font-weight: 900;
-                color: #ffffff;
+                color: var(--text-color);
                 text-shadow: 
-                    0 0 10px rgba(35, 213, 171, 0.8),
+                    0 0 10px var(--glow-color),
                     0 0 20px rgba(255, 255, 255, 0.4);
                 letter-spacing: 2px;
                 animation: pulseHora 1s ease-in-out infinite;
+                transition: all 0.6s ease;
             }
             
             @keyframes pulseHora {
                 0%, 100% { 
                     text-shadow: 
-                        0 0 10px rgba(35, 213, 171, 0.8),
+                        0 0 10px var(--glow-color),
                         0 0 20px rgba(255, 255, 255, 0.4);
                     transform: scale(1);
                 }
                 50% { 
                     text-shadow: 
-                        0 0 20px rgba(35, 213, 171, 1),
+                        0 0 20px var(--glow-color),
                         0 0 40px rgba(255, 255, 255, 0.6);
                     transform: scale(1.02);
                 }
@@ -660,29 +725,29 @@ def read_root(request: Request):
             /* Input search: Glassmorphism */
             input {
                 padding: 12px 20px;
-                background: rgba(255, 255, 255, 0.15);
-                border: 1px solid rgba(255, 255, 255, 0.3);
+                background: var(--input-bg);
+                border: 1px solid var(--input-border);
                 border-radius: 12px;
                 font-size: 0.95em;
                 width: 100%;
                 max-width: 350px;
-                color: #ffffff;
+                color: var(--text-color);
                 backdrop-filter: blur(5px);
                 transition: all 0.3s;
-                box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+                box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
             }
             
             input::placeholder {
-                color: rgba(255, 255, 255, 0.6);
+                color: rgba(255, 255, 255, 0.5);
             }
             
             input:focus {
                 outline: none;
-                background: rgba(255, 255, 255, 0.25);
-                border-color: rgba(255, 255, 255, 0.5);
+                background: var(--input-bg);
+                border-color: var(--input-border);
                 box-shadow: 
-                    inset 0 0 15px rgba(0, 0, 0, 0.1),
-                    0 0 20px rgba(35, 213, 171, 0.5);
+                    inset 0 0 15px rgba(0, 0, 0, 0.2),
+                    0 0 20px var(--glow-color);
                 transform: translateY(-2px);
             }
             
@@ -692,7 +757,7 @@ def read_root(request: Request):
                 background: rgba(35, 213, 171, 0.3);
                 border: 1px solid rgba(35, 213, 171, 0.6);
                 border-radius: 12px;
-                color: #ffffff;
+                color: var(--text-color);
                 cursor: pointer;
                 font-size: 0.95em;
                 font-weight: 600;
@@ -721,14 +786,16 @@ def read_root(request: Request):
             .paises-disponibles {
                 margin-top: 40px;
                 padding-top: 30px;
-                border-top: 1px solid rgba(255, 255, 255, 0.2);
+                border-top: 1px solid var(--border-color);
+                transition: border-color 0.6s ease;
             }
             
             .paises-disponibles h3 {
-                color: rgba(255, 255, 255, 0.95);
+                color: var(--text-color);
                 margin-bottom: 15px;
                 font-size: 1.1em;
-                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+                transition: color 0.6s ease;
             }
             
             /* Lista de países: Tags clicables */
@@ -740,34 +807,35 @@ def read_root(request: Request):
             
             /* Tags de país: Glassmorphism mini */
             .pais-tag {
-                background: rgba(255, 255, 255, 0.1);
-                border: 1px solid rgba(255, 255, 255, 0.2);
+                background: var(--card-bg);
+                border: 1px solid var(--border-color);
                 padding: 8px 15px;
                 border-radius: 20px;
                 font-size: 0.85em;
-                color: rgba(255, 255, 255, 0.85);
+                color: var(--text-color);
                 cursor: pointer;
                 transition: all 0.3s;
                 backdrop-filter: blur(5px);
             }
             
             .pais-tag:hover {
-                background: rgba(35, 213, 171, 0.3);
-                border-color: rgba(35, 213, 171, 0.6);
-                color: #ffffff;
+                background: var(--card-bg-hover);
+                border-color: var(--border-color-hover);
+                color: var(--text-color);
                 transform: translateY(-2px);
-                box-shadow: 0 4px 12px rgba(35, 213, 171, 0.3);
+                box-shadow: 0 4px 12px var(--glow-color);
             }
             
             /* Badge de seguridad */
             .security-badge {
                 text-align: center;
                 font-size: 0.8em;
-                color: rgba(255, 255, 255, 0.7);
+                color: rgba(255, 255, 255, 0.6);
                 margin-top: 25px;
                 padding-top: 25px;
-                border-top: 1px solid rgba(255, 255, 255, 0.2);
-                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+                border-top: 1px solid var(--border-color);
+                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+                transition: all 0.6s ease;
             }
             
             /* Responsive: Móviles */
@@ -797,10 +865,19 @@ def read_root(request: Request):
                 button {
                     width: 100%;
                 }
+                
+                .theme-toggle {
+                    width: 45px;
+                    height: 45px;
+                    font-size: 1.3em;
+                }
             }
         </style>
     </head>
     <body>
+        <!-- [v5.1] Toggle Dark Mode -->
+        <button class="theme-toggle" id="themeToggle" aria-label="Cambiar theme" title="Dark Mode">🌙</button>
+        
         <div class="container">
             <h1>🌍 VALERIA ⏰</h1>
             
@@ -1006,7 +1083,65 @@ def read_root(request: Request):
                         }
                     });
                 }
+                
+                // [v5.1] Inicializar Dark Mode
+                inicializarDarkMode();
             });
+            
+            // ========== [v5.1] DARK MODE =========
+            
+            /**
+             * Inicializa el Dark Mode desde localStorage
+             */
+            function inicializarDarkMode() {
+                const toggle = document.getElementById('themeToggle');
+                if (!toggle) return;
+                
+                // Obtener preferencia guardada o usar preferencia del sistema
+                const savedTheme = localStorage.getItem('theme');
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                const useDarkMode = savedTheme ? savedTheme === 'dark' : prefersDark;
+                
+                // Aplicar tema inicial
+                if (useDarkMode) {
+                    document.body.classList.add('dark-mode');
+                    toggle.textContent = '☀️';
+                    toggle.title = 'Light Mode';
+                }
+                
+                // Agregar listener para cambios
+                toggle.addEventListener('click', toggleDarkMode);
+            }
+            
+            /**
+             * Alterna entre Dark Mode y Light Mode con animación
+             */
+            function toggleDarkMode() {
+                const body = document.body;
+                const toggle = document.getElementById('themeToggle');
+                
+                // Agregar animación de rotación
+                toggle.style.animation = 'none';
+                setTimeout(() => {
+                    toggle.style.animation = '';
+                }, 10);
+                
+                // Cambiar tema
+                body.classList.toggle('dark-mode');
+                
+                const isDarkMode = body.classList.contains('dark-mode');
+                
+                // Actualizar UI del botón
+                toggle.textContent = isDarkMode ? '☀️' : '🌙';
+                toggle.title = isDarkMode ? 'Light Mode' : 'Dark Mode';
+                toggle.style.transform = 'rotate(360deg)';
+                
+                // Guardar preferencia
+                localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+                
+                // Log para debugging
+                console.log('Dark Mode:', isDarkMode ? 'ON ✓' : 'OFF ✗');
+            }
         </script>
     </body>
     </html>
