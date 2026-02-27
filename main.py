@@ -362,6 +362,7 @@ class UsuarioRegistro(BaseModel):
     username: str
     email: str
     password: str
+    role: str = "alumno"  # Nuevo: campo de rol (docente/alumno)
     
     @validator('username')
     def username_valido(cls, v):
@@ -377,6 +378,12 @@ class UsuarioRegistro(BaseModel):
             raise ValueError('Email no tiene formato válido')
         if len(v) > 100:
             raise ValueError('Email demasiado largo')
+        return v.lower()
+    
+    @validator('role')
+    def role_valido(cls, v):
+        if v not in ['docente', 'alumno']:
+            raise ValueError('El rol debe ser "docente" o "alumno"')
         return v.lower()
     
     @validator('password')
@@ -1550,6 +1557,11 @@ async def pagina_login():
                 🔒 Conexión segura | Los datos se transmiten de forma cifrada
             </div>
             
+            <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
+                <p style="color: #666; margin-bottom: 15px;">¿No tienes cuenta?</p>
+                <a href="/register" style="display: inline-block; width: 100%; padding: 12px; background: #4CAF50; color: white; border-radius: 8px; text-decoration: none; font-weight: bold; transition: background 0.3s;" onmouseover="this.style.background='#45a049'" onmouseout="this.style.background='#4CAF50'">📝 Registrarse</a>
+            </div>
+            
             <div class="back-link">
                 <a href="/">← Volver a la página principal</a>
             </div>
@@ -1631,10 +1643,388 @@ async def pagina_login():
     </html>
     """)
 
+@app.get("/register")
+async def pagina_registro():
+    """
+    Página de registro para nuevos usuarios.
+    Permite registrarse como Docente o Alumno.
+    """
+    return HTMLResponse(content="""
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'">
+        <title>Registrarse - Valeria</title>
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding: 20px;
+            }
+            
+            .register-container {
+                background: white;
+                border-radius: 15px;
+                padding: 40px;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                max-width: 450px;
+                width: 100%;
+            }
+            
+            .register-header {
+                text-align: center;
+                margin-bottom: 40px;
+            }
+            
+            .register-header h1 {
+                color: #333;
+                font-size: 2em;
+                margin-bottom: 10px;
+            }
+            
+            .register-header p {
+                color: #666;
+                font-size: 0.9em;
+            }
+            
+            .form-group {
+                margin-bottom: 20px;
+            }
+            
+            label {
+                display: block;
+                margin-bottom: 8px;
+                color: #333;
+                font-weight: bold;
+            }
+            
+            input, select {
+                width: 100%;
+                padding: 12px;
+                border: 2px solid #e0e0e0;
+                border-radius: 8px;
+                font-size: 1em;
+                transition: border-color 0.3s;
+            }
+            
+            input:focus, select:focus {
+                outline: none;
+                border-color: #667eea;
+                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            }
+            
+            .role-selector {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+                margin-bottom: 20px;
+            }
+            
+            .role-button {
+                padding: 15px;
+                border: 2px solid #e0e0e0;
+                border-radius: 8px;
+                background: white;
+                cursor: pointer;
+                font-weight: bold;
+                transition: all 0.3s;
+                text-align: center;
+            }
+            
+            .role-button:hover {
+                border-color: #667eea;
+                background: #f5f5f5;
+            }
+            
+            .role-button.selected {
+                border-color: #667eea;
+                background: #667eea;
+                color: white;
+            }
+            
+            .btn-register {
+                width: 100%;
+                padding: 12px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                border: none;
+                border-radius: 8px;
+                font-size: 1em;
+                font-weight: bold;
+                cursor: pointer;
+                transition: transform 0.2s;
+            }
+            
+            .btn-register:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+            }
+            
+            .btn-register:active {
+                transform: translateY(0);
+            }
+            
+            .error-message {
+                background: #ffebee;
+                color: #c62828;
+                padding: 12px;
+                border-radius: 8px;
+                margin-bottom: 20px;
+                display: none;
+                border-left: 4px solid #c62828;
+            }
+            
+            .success-message {
+                background: #e8f5e9;
+                color: #2e7d32;
+                padding: 12px;
+                border-radius: 8px;
+                margin-bottom: 20px;
+                display: none;
+                border-left: 4px solid #2e7d32;
+            }
+            
+            .loading {
+                display: none;
+                text-align: center;
+                color: #667eea;
+            }
+            
+            .spinner {
+                display: inline-block;
+                width: 20px;
+                height: 20px;
+                border: 3px solid #f3f3f3;
+                border-top: 3px solid #667eea;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+                margin-right: 10px;
+            }
+            
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            
+            .back-link {
+                text-align: center;
+                margin-top: 20px;
+            }
+            
+            .back-link a {
+                color: #667eea;
+                text-decoration: none;
+                font-size: 0.9em;
+            }
+            
+            .back-link a:hover {
+                text-decoration: underline;
+            }
+            
+            .password-requirements {
+                background: #f5f5f5;
+                padding: 10px;
+                border-radius: 5px;
+                font-size: 0.85em;
+                color: #666;
+                margin-top: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="register-container">
+            <div class="register-header">
+                <h1>📝 Registrarse</h1>
+                <p>Crea tu cuenta en Valeria</p>
+            </div>
+            
+            <div id="error-message" class="error-message"></div>
+            <div id="success-message" class="success-message"></div>
+            
+            <form id="register-form" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label>Selecciona tu rol:</label>
+                    <div class="role-selector">
+                        <button type="button" class="role-button" data-role="docente" onclick="selectRole('docente')">
+                            👨‍🏫 Docente
+                        </button>
+                        <button type="button" class="role-button" data-role="alumno" onclick="selectRole('alumno')">
+                            👨‍🎓 Alumno
+                        </button>
+                    </div>
+                    <input type="hidden" id="role" name="role" value="alumno" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="username">Usuario</label>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        name="username"
+                        placeholder="ej: juan_perez"
+                        required
+                        minlength="3"
+                        maxlength="20"
+                    >
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email"
+                        placeholder="ej: juan@ejemplo.com"
+                        required
+                    >
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Contraseña</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password"
+                        placeholder="••••••••"
+                        required
+                        minlength="6"
+                    >
+                    <div class="password-requirements">
+                        ℹ️ Mínimo 6 caracteres
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirm-password">Verificar Contraseña</label>
+                    <input 
+                        type="password" 
+                        id="confirm-password" 
+                        name="confirm-password"
+                        placeholder="••••••••"
+                        required
+                        minlength="6"
+                    >
+                </div>
+                
+                <button type="submit" class="btn-register" id="btn-submit">
+                    Crear Cuenta
+                </button>
+            </form>
+            
+            <div id="loading" class="loading">
+                <div class="spinner"></div> Registrando...
+            </div>
+            
+            <div class="back-link" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
+                <p style="color: #666; margin-bottom: 10px;">¿Ya tienes cuenta?</p>
+                <a href="/login">🔐 Ir a Login</a>
+            </div>
+        </div>
+        
+        <script>
+            let selectedRole = 'alumno'; // Rol por defecto
+            
+            function selectRole(role) {
+                selectedRole = role;
+                document.getElementById('role').value = role;
+                
+                // Actualizar UI
+                document.querySelectorAll('.role-button').forEach(btn => {
+                    btn.classList.remove('selected');
+                });
+                document.querySelector(`[data-role="${role}"]`).classList.add('selected');
+            }
+            
+            // Marcar rol por defecto como seleccionado
+            document.querySelector('[data-role="alumno"]').classList.add('selected');
+            
+            async function handleRegister(event) {
+                event.preventDefault();
+                
+                const username = document.getElementById('username').value;
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                const confirmPassword = document.getElementById('confirm-password').value;
+                const role = document.getElementById('role').value;
+                
+                const errorMsg = document.getElementById('error-message');
+                const successMsg = document.getElementById('success-message');
+                const loading = document.getElementById('loading');
+                const btnSubmit = document.getElementById('btn-submit');
+                
+                // Limpiar mensajes
+                errorMsg.style.display = 'none';
+                successMsg.style.display = 'none';
+                
+                // Validar que las contraseñas coincidan
+                if (password !== confirmPassword) {
+                    errorMsg.textContent = '❌ Las contraseñas no coinciden';
+                    errorMsg.style.display = 'block';
+                    return;
+                }
+                
+                loading.style.display = 'block';
+                btnSubmit.disabled = true;
+                
+                try {
+                    const response = await fetch('/api/v1/auth/register', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            username: username,
+                            email: email,
+                            password: password,
+                            role: role
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        successMsg.textContent = '✅ Cuenta creada exitosamente. Redirigiendo...';
+                        successMsg.style.display = 'block';
+                        
+                        // Redirigir a página principal después de 2 segundos
+                        setTimeout(() => {
+                            window.location.href = '/';
+                        }, 2000);
+                    } else {
+                        errorMsg.textContent = '❌ ' + (data.detail || 'Error en el registro');
+                        errorMsg.style.display = 'block';
+                        btnSubmit.disabled = false;
+                        loading.style.display = 'none';
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    errorMsg.textContent = '❌ Error de conexión con el servidor';
+                    errorMsg.style.display = 'block';
+                    btnSubmit.disabled = false;
+                    loading.style.display = 'none';
+                }
+            }
+            
+            // Foco automático en el primer campo
+            document.getElementById('username').focus();
+        </script>
+    </body>
+    </html>
+    """)
+
 @app.post("/api/v1/auth/login")
 async def login(credenciales: LoginRequest, request: Request):
     """
     Endpoint de login que retorna un JWT token.
+    
     
     Args:
         credenciales: Username y password
@@ -1684,6 +2074,66 @@ async def login(credenciales: LoginRequest, request: Request):
         "access_token": access_token,
         "token_type": "bearer",
         "expires_in": ACCESS_TOKEN_EXPIRE_MINUTES * 60
+    }
+
+@app.post("/api/v1/auth/register")
+async def registro(usuario_new: UsuarioRegistro, request: Request):
+    """
+    Endpoint para registrar nuevos usuarios.
+    
+    Requiere:
+    - username: Entre 3 y 20 caracteres
+    - email: Un email válido
+    - password: Mínimo 6 caracteres
+    - role: "docente" o "alumno"
+    
+    Returns:
+    - Mensaje de éxito
+    """
+    client_ip = request.client.host if request.client else "unknown"
+    
+    # Verificar rate limiting
+    if not check_rate_limit(client_ip):
+        logger.warning(f"[{client_ip}] Rate limit excedido en registro")
+        raise HTTPException(status_code=429, detail="Demasiados intentos. Intenta más tarde")
+    
+    # Agregar request a la lista
+    request_counts[client_ip].append(datetime.now())
+    
+    # Validación básica
+    if not usuario_new.password or len(usuario_new.password) < 6:
+        raise HTTPException(status_code=400, detail="La contraseña debe tener al menos 6 caracteres")
+    
+    # Verificar si el usuario ya existe
+    with users_db_lock:
+        if usuario_new.username in USUARIOS:
+            logger.warning(f"[{client_ip}] Intento de registrar usuario existente: {usuario_new.username}")
+            raise HTTPException(status_code=400, detail="El usuario ya existe")
+        
+        if any(u.get("email") == usuario_new.email for u in USUARIOS.values()):
+            logger.warning(f"[{client_ip}] Intento de registrar email existente: {usuario_new.email}")
+            raise HTTPException(status_code=400, detail="El email ya está registrado")
+        
+        # Crear nuevo usuario
+        nuevo_usuario = {
+            "username": usuario_new.username,
+            "email": usuario_new.email,
+            "hashed_password": pwd_context.hash(usuario_new.password),
+            "role": usuario_new.role,  # Nuevo: guardar el rol
+            "is_admin": False,
+            "is_active": True
+        }
+        
+        # Agregar a base de datos
+        USUARIOS[usuario_new.username] = nuevo_usuario
+        guardar_usuarios(USUARIOS)
+        
+        logger.info(f"[{client_ip}] Nuevo usuario registrado: {usuario_new.username} (rol: {usuario_new.role})")
+    
+    return {
+        "message": f"Usuario {usuario_new.username} registrado exitosamente como {usuario_new.role}",
+        "username": usuario_new.username,
+        "role": usuario_new.role
     }
 
 @app.post("/api/v1/auth/logout")
