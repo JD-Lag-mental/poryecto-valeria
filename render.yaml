@@ -1,7 +1,7 @@
 services:
   - type: web
     name: valeria-api
-    runtime: python-3.11
+    runtime: python-3.12
     buildCommand: "pip install -r requirements.txt"
     startCommand: "uvicorn main:app --host 0.0.0.0 --port $PORT"
     envVars:
@@ -15,3 +15,12 @@ services:
       - path: /
         matchType: prefix
         serviceName: valeria-api
+
+  - type: background_worker
+    name: valeria-keep-alive
+    runtime: python-3.12
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python keep_alive.py"
+    envVars:
+      - key: RENDER_EXTERNAL_URL
+        value: https://valeria-api.onrender.com

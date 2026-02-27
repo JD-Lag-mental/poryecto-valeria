@@ -19,6 +19,10 @@ bcrypt==4.1.1
 # Configuración
 python-dotenv==1.0.0
 
+# HTTP Client - Keep Alive
+httpx==0.25.2
+requests==2.31.0
+
 # Optional: Dependencias futuras de seguridad
 # fastapi-limiter2==0.1.5  # Rate limiting mejorado con Redis
 # sqlalchemy==2.0.0        # Base de datos persistente
