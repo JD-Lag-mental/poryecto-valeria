@@ -1758,12 +1758,64 @@ async def crear_usuario(new_user: UsuarioRegistro, admin: dict = Depends(obtener
     return {"message": f"Usuario {new_user.username} creado exitosamente"}
 
 @app.get("/admin")
-async def panel_admin(usuario: dict = Depends(obtener_usuario_admin)):
+async def panel_admin_page(request: Request):
     """
     Panel de administración de Valeria.
     
-    Requiere: Ser administrador
+    Requiere: Ser administrador (con token JWT)
     """
+    # Intentar obtener usuario del token
+    auth_header = request.headers.get("Authorization")
+    usuario = None
+    
+    if auth_header and auth_header.startswith("Bearer "):
+        try:
+            token = auth_header.split(" ")[1]
+            payload = verificar_token(token)
+            username = payload.get("sub")
+            
+            if username in USUARIOS and USUARIOS[username].get("is_admin"):
+                usuario = USUARIOS[username].copy()
+                usuario.pop("hashed_password", None)
+            else:
+                # Token válido pero no es admin
+                return HTMLResponse("""
+                <html>
+                <head><title>Acceso Denegado</title></head>
+                <body style="font-family: Arial; text-align: center; padding: 50px;">
+                    <h1>🚫 Acceso Denegado</h1>
+                    <p>No tienes permisos de administrador</p>
+                    <a href="/login">Volver a Login</a>
+                </body>
+                </html>
+                """)
+        except:
+            pass
+    
+    # Si no hay usuario auténtico, mostrar formulario de login
+    if not usuario:
+        return HTMLResponse("""
+        <html>
+        <head>
+            <title>Admin - Autenticación Requerida</title>
+            <style>
+                body { font-family: Arial; text-align: center; padding: 50px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; margin: 0; }
+                .container { background: white; padding: 40px; border-radius: 10px; max-width: 400px; margin: 50px auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+                h1 { color: #333; }
+                p { color: #666; margin: 20px 0; }
+                a { display: inline-block; margin-top: 20px; padding: 10px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; }
+                a:hover { background: #764ba2; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>🔐 Panel Admin</h1>
+                <p>Se requiere autenticación para acceder al panel</p>
+                <a href="/login">Ir a Login</a>
+            </div>
+        </body>
+        </html>
+        """)
     return HTMLResponse(content=f"""
     <!DOCTYPE html>
     <html lang="es">
