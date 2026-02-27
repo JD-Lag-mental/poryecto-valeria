@@ -215,12 +215,17 @@ CORS_ORIGINS = os.getenv(
     "http://127.0.0.1:8000,http://localhost:8000,http://localhost:3000"
 ).split(",")
 
+# Asegurar que el origen actual esté incluido en producción
+if os.getenv("ENVIRONMENT") == "production" and os.getenv("CORS_ORIGINS"):
+    # En producción desde Render, permitir la misma URL
+    CORS_ORIGINS = list(set([origin.strip() for origin in CORS_ORIGINS]))
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[origin.strip() for origin in CORS_ORIGINS],
-    allow_credentials=False,  # No permitir credenciales en CORS (usar Authorization header)
-    allow_methods=["GET", "HEAD", "OPTIONS", "POST"],  # POST para autenticación
-    allow_headers=["Content-Type", "Accept", "Authorization"],  # Authorization para JWT
+    allow_credentials=True,  # Permitir credenciales para mejor compatibilidad
+    allow_methods=["GET", "HEAD", "OPTIONS", "POST", "PUT", "DELETE"],  # Métodos HTTP permitidos
+    allow_headers=["*"],  # Permitir todos los headers
     max_age=600,  # Cache CORS por 10 minutos
     expose_headers=["X-RateLimit-Remaining"],
 )
@@ -1588,6 +1593,13 @@ async def pagina_login():
                 const loading = document.getElementById('loading');
                 const btnSubmit = document.getElementById('btn-submit');
                 
+                // Validación básica
+                if (!username || !password) {
+                    errorMsg.textContent = '❌ Por favor completa todos los campos';
+                    errorMsg.style.display = 'block';
+                    return;
+                }
+                
                 // Limpiar mensajes
                 errorMsg.style.display = 'none';
                 successMsg.style.display = 'none';
@@ -1595,6 +1607,8 @@ async def pagina_login():
                 btnSubmit.disabled = true;
                 
                 try {
+                    console.log('📤 Enviando login a:', '/api/v1/auth/login');
+                    
                     const response = await fetch('/api/v1/auth/login', {
                         method: 'POST',
                         headers: {
@@ -1606,7 +1620,10 @@ async def pagina_login():
                         })
                     });
                     
+                    console.log('📥 Respuesta status:', response.status);
+                    
                     const data = await response.json();
+                    console.log('📊 Datos:", data);
                     
                     if (response.ok) {
                         // Guardar token
@@ -1622,14 +1639,15 @@ async def pagina_login():
                         }, 1500);
                     } else {
                         // Error de autenticación
+                        console.error('❌ Error:', data);
                         errorMsg.textContent = '❌ ' + (data.detail || 'Error en autenticación');
                         errorMsg.style.display = 'block';
                         btnSubmit.disabled = false;
                         loading.style.display = 'none';
                     }
                 } catch (error) {
-                    console.error('Error:', error);
-                    errorMsg.textContent = '❌ Error de conexión con el servidor';
+                    console.error('❌ Error de conexión:', error);
+                    errorMsg.textContent = '❌ Error de conexión con el servidor: ' + error.message;
                     errorMsg.style.display = 'block';
                     btnSubmit.disabled = false;
                     loading.style.display = 'none';
@@ -1938,6 +1956,25 @@ async def pagina_registro():
                 errorMsg.style.display = 'none';
                 successMsg.style.display = 'none';
                 
+                // Validaciones
+                if (!username || !email || !password || !confirmPassword) {
+                    errorMsg.textContent = '❌ Por favor completa todos los campos';
+                    errorMsg.style.display = 'block';
+                    return;
+                }
+                
+                if (username.length < 3) {
+                    errorMsg.textContent = '❌ El usuario debe tener al menos 3 caracteres';
+                    errorMsg.style.display = 'block';
+                    return;
+                }
+                
+                if (password.length < 6) {
+                    errorMsg.textContent = '❌ La contraseña debe tener al menos 6 caracteres';
+                    errorMsg.style.display = 'block';
+                    return;
+                }
+                
                 // Validar que las contraseñas coincidan
                 if (password !== confirmPassword) {
                     errorMsg.textContent = '❌ Las contraseñas no coinciden';
@@ -1949,6 +1986,8 @@ async def pagina_registro():
                 btnSubmit.disabled = true;
                 
                 try {
+                    console.log('📤 Enviando registro a:', '/api/v1/auth/register');
+                    
                     const response = await fetch('/api/v1/auth/register', {
                         method: 'POST',
                         headers: {
@@ -1962,7 +2001,10 @@ async def pagina_registro():
                         })
                     });
                     
+                    console.log('📥 Respuesta status:', response.status);
+                    
                     const data = await response.json();
+                    console.log('📊 Datos:', data);
                     
                     if (response.ok) {
                         successMsg.textContent = '✅ Cuenta creada exitosamente. Redirigiendo...';
@@ -1973,14 +2015,15 @@ async def pagina_registro():
                             window.location.href = '/';
                         }, 2000);
                     } else {
+                        console.error('❌ Error:', data);
                         errorMsg.textContent = '❌ ' + (data.detail || 'Error en el registro');
                         errorMsg.style.display = 'block';
                         btnSubmit.disabled = false;
                         loading.style.display = 'none';
                     }
                 } catch (error) {
-                    console.error('Error:', error);
-                    errorMsg.textContent = '❌ Error de conexión con el servidor';
+                    console.error('❌ Error de conexión:', error);
+                    errorMsg.textContent = '❌ Error de conexión con el servidor: ' + error.message;
                     errorMsg.style.display = 'block';
                     btnSubmit.disabled = false;
                     loading.style.display = 'none';
