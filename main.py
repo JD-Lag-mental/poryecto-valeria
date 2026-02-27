@@ -1524,7 +1524,7 @@ async def pagina_login():
             <div id="error-message" class="error-message"></div>
             <div id="success-message" class="success-message"></div>
             
-            <form id="login-form" onsubmit="handleLogin(event)">
+            <form id="login-form">
                 <div class="form-group">
                     <label for="username">Usuario</label>
                     <input 
@@ -1549,7 +1549,7 @@ async def pagina_login():
                     >
                 </div>
                 
-                <button type="submit" class="btn-login" id="btn-submit">
+                <button type="button" class="btn-login" id="btn-submit">
                     Iniciar Sesión
                 </button>
             </form>
@@ -1564,7 +1564,7 @@ async def pagina_login():
             
             <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
                 <p style="color: #666; margin-bottom: 15px;">¿No tienes cuenta?</p>
-                <a href="/register" style="display: inline-block; width: 100%; padding: 12px; background: #4CAF50; color: white; border-radius: 8px; text-decoration: none; font-weight: bold; transition: background 0.3s;" onmouseover="this.style.background='#45a049'" onmouseout="this.style.background='#4CAF50'">📝 Registrarse</a>
+                <a href="/register" id="register-btn" style="display: inline-block; width: 100%; padding: 12px; background: #4CAF50; color: white; border-radius: 8px; text-decoration: none; font-weight: bold; transition: background 0.3s;">📝 Registrarse</a>
             </div>
             
             <div class="back-link">
@@ -1581,6 +1581,22 @@ async def pagina_login():
                 localStorage.setItem('auth_token', token);
                 window.location.href = '/admin';
             }
+            
+            // Event listener para el formulario
+            document.getElementById('login-form').addEventListener('click', function(event) {
+                if (event.target.id === 'btn-submit') {
+                    handleLogin(event);
+                }
+            });
+            
+            // Event listener para el botón de registro
+            const registerBtn = document.getElementById('register-btn');
+            registerBtn.addEventListener('mouseover', function() {
+                this.style.background = '#45a049';
+            });
+            registerBtn.addEventListener('mouseout', function() {
+                this.style.background = '#4CAF50';
+            });
             
             async function handleLogin(event) {
                 event.preventDefault();
@@ -1623,7 +1639,7 @@ async def pagina_login():
                     console.log('📥 Respuesta status:', response.status);
                     
                     const data = await response.json();
-                    console.log('📊 Datos:", data);
+                    console.log('📊 Datos:', data);
                     
                     if (response.ok) {
                         // Guardar token
