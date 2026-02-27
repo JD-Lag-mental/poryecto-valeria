@@ -1721,33 +1721,27 @@ async def pagina_registro():
                 box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
             }
             
-            .role-selector {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 10px;
-                margin-bottom: 20px;
+            select {
+                appearance: none;
+                background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12"%3E%3Cpath fill="%23667eea" d="M6 9L1 4h10z"/%3E%3C/svg%3E');
+                background-repeat: no-repeat;
+                background-position: right 12px center;
+                padding-right: 36px;
             }
             
-            .role-button {
-                padding: 15px;
-                border: 2px solid #e0e0e0;
-                border-radius: 8px;
-                background: white;
-                cursor: pointer;
-                font-weight: bold;
-                transition: all 0.3s;
-                text-align: center;
-            }
-            
-            .role-button:hover {
+            select:hover {
                 border-color: #667eea;
-                background: #f5f5f5;
             }
             
-            .role-button.selected {
+            select:focus {
+                outline: none;
                 border-color: #667eea;
-                background: #667eea;
-                color: white;
+                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            }
+            
+            option {
+                padding: 10px;
+                font-size: 1em;
             }
             
             .btn-register {
@@ -1851,16 +1845,11 @@ async def pagina_registro():
             
             <form id="register-form" onsubmit="handleRegister(event)">
                 <div class="form-group">
-                    <label>Selecciona tu rol:</label>
-                    <div class="role-selector">
-                        <button type="button" class="role-button" data-role="docente" onclick="selectRole('docente')">
-                            👨‍🏫 Docente
-                        </button>
-                        <button type="button" class="role-button" data-role="alumno" onclick="selectRole('alumno')">
-                            👨‍🎓 Alumno
-                        </button>
-                    </div>
-                    <input type="hidden" id="role" name="role" value="alumno" required>
+                    <label for="role">Selecciona tu rol:</label>
+                    <select id="role" name="role" required>
+                        <option value="alumno">👨‍🎓 Alumno</option>
+                        <option value="docente">👨‍🏫 Docente</option>
+                    </select>
                 </div>
                 
                 <div class="form-group">
@@ -1930,27 +1919,12 @@ async def pagina_registro():
         </div>
         
         <script>
-            let selectedRole = 'alumno'; // Rol por defecto
-            
-            function selectRole(role) {
-                selectedRole = role;
-                document.getElementById('role').value = role;
-                
-                // Actualizar UI
-                document.querySelectorAll('.role-button').forEach(btn => {
-                    btn.classList.remove('selected');
-                });
-                document.querySelector(`[data-role="${role}"]`).classList.add('selected');
-            }
-            
-            // Marcar rol por defecto como seleccionado
-            document.querySelector('[data-role="alumno"]').classList.add('selected');
             
             async function handleRegister(event) {
                 event.preventDefault();
                 
-                const username = document.getElementById('username').value;
-                const email = document.getElementById('email').value;
+                const username = document.getElementById('username').value.trim();
+                const email = document.getElementById('email').value.trim();
                 const password = document.getElementById('password').value;
                 const confirmPassword = document.getElementById('confirm-password').value;
                 const role = document.getElementById('role').value;
