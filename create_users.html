@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Usuarios - Valeria</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 0.95em;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .usuarios-list {
+            background: #f5f5f5;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+        
+        .usuario-item {
+            background: white;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .usuario-info {
+            flex: 1;
+        }
+        
+        .usuario-username {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .usuario-password {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .rol-badge {
+            background: #667eea;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        
+        .rol-badge.admin {
+            background: #ff6b6b;
+        }
+        
+        .success-message {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            border-left: 4px solid #2e7d32;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>👥 Manager de Usuarios</h1>
+        <p class="subtitle">Valeria - Crear usuarios para testing</p>
+        
+        <div id="success-message" class="success-message"></div>
+        
+        <form id="user-form" onsubmit="agregarUsuario(event)">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input 
+                    type="text" 
+                    id="username" 
+                    placeholder="ej: usuario1"
+                    minlength="3"
+                    maxlength="20"
+                    required
+                >
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    placeholder="ej: usuario@valeria.local"
+                    required
+                >
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input 
+                    type="text" 
+                    id="password" 
+                    placeholder="ej: mipass123"
+                    minlength="6"
+                    maxlength="50"
+                    required
+                >
+            </div>
+            
+            <div class="form-group">
+                <label for="is_admin">Rol</label>
+                <select id="is_admin">
+                    <option value="false">👤 Usuario Normal</option>
+                    <option value="true">👑 Administrador</option>
+                </select>
+            </div>
+            
+            <button type="submit">➕ Agregar Usuario</button>
+        </form>
+        
+        <div class="usuarios-list">
+            <h3 style="margin-bottom: 15px; color: #333;">📋 Usuarios Creados</h3>
+            <div id="usuarios-container"></div>
+        </div>
+        
+        <div style="margin-top: 20px; text-align: center;">
+            <button onclick="guardarEnJSON()" style="background: #51cf66;">
+                💾 Guardar usuarios en BD
+            </button>
+            <button onclick="borrarTodo()" style="background: #ff6b6b; margin-top: 10px;">
+                🗑️ Limpiar todo
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        // Datos en memory
+        let usuarios = [];
+        
+        function agregarUsuario(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const is_admin = document.getElementById('is_admin').value === 'true';
+            
+            // Validar que no exista
+            if (usuarios.find(u => u.username === username)) {
+                alert('El usuario ' + username + ' ya existe');
+                return;
+            }
+            
+            usuarios.push({
+                username,
+                email,
+                password,
+                is_admin
+            });
+            
+            // Limpiar form
+            document.getElementById('user-form').reset();
+            document.getElementById('username').focus();
+            
+            mostrarUsuarios();
+        }
+        
+        function mostrarUsuarios() {
+            const container = document.getElementById('usuarios-container');
+            
+            if (usuarios.length === 0) {
+                container.innerHTML = '<p style="color: #999; text-align: center;">No hay usuarios aún</p>';
+                return;
+            }
+            
+            container.innerHTML = usuarios.map((u, i) => `
+                <div class="usuario-item">
+                    <div class="usuario-info">
+                        <div class="usuario-username">${u.username}</div>
+                        <div class="usuario-password">🔐 ${u.password} | ${u.email}</div>
+                    </div>
+                    <div>
+                        <span class="rol-badge ${u.is_admin ? 'admin' : ''}">
+                            ${u.is_admin ? '🔑 ADMIN' : '👤 USER'}
+                        </span>
+                        <button onclick="eliminarUsuario(${i})" style="
+                            background: #ff6b6b;
+                            width: 40px;
+                            padding: 6px;
+                            margin-left: 8px;
+                        ">✕</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function eliminarUsuario(index) {
+            usuarios.splice(index, 1);
+            mostrarUsuarios();
+        }
+        
+        function borrarTodo() {
+            if (confirm('¿Borrar todos los usuarios?')) {
+                usuarios = [];
+                mostrarUsuarios();
+            }
+        }
+        
+        function guardarEnJSON() {
+            if (usuarios.length === 0) {
+                alert('Agrega al menos un usuario');
+                return;
+            }
+            
+            // Convertir a JSON formato que espera main.py
+            const usuariosJSON = {};
+            usuarios.forEach(u => {
+                usuariosJSON[u.username] = {
+                    username: u.username,
+                    email: u.email,
+                    hashed_password: "$2b$12$" + u.password.padEnd(53, "x"), // Dummy hash (NO REAL)
+                    is_admin: u.is_admin,
+                    is_active: true
+                };
+            });
+            
+            // Mostrar JSON para copiar
+            const jsonStr = JSON.stringify(usuariosJSON, null, 2);
+            
+            const textarea = document.createElement('textarea');
+            textarea.value = jsonStr;
+            textarea.style.width = '100%';
+            textarea.style.height = '300px';
+            textarea.style.padding = '10px';
+            textarea.style.fontFamily = 'monospace';
+            textarea.style.fontSize = '12px';
+            textarea.style.border = '2px solid #667eea';
+            textarea.style.borderRadius = '8px';
+            textarea.style.marginTop = '20px';
+            textarea.readOnly = true;
+            
+            // Crear modal
+            const modal = `
+                <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 1000;">
+                    <div style="background: white; padding: 30px; border-radius: 10px; max-width: 700px; width: 90%;">
+                        <h3 style="margin-bottom: 15px;">📋 JSON para users_db.json</h3>
+                        <p style="margin-bottom: 15px; color: #666;">
+                            Copia este JSON y pégalo en el archivo <strong>users_db.json</strong>:
+                        </p>
+                        <textarea readonly style="width: 100%; height: 300px; padding: 10px; font-family: monospace; font-size: 12px; border: 2px solid #667eea; border-radius: 8px;">${jsonStr}</textarea>
+                        <p style="margin-top: 15px; color: #999; font-size: 0.9em;">
+                            ⚠️ Nota: Los hashes mostrados son dummy. Usa tu programa Python para hash real.
+                        </p>
+                        <button onclick="this.parentElement.parentElement.remove()" style="width: 100%; margin-top: 20px;">Cerrar</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modal);
+        }
+        
+        // Cargar usuarios por defecto
+        usuarios = [
+            { username: 'admin', email: 'admin@valeria.local', password: 'admin123', is_admin: true },
+            { username: 'usuario1', email: 'usuario1@valeria.local', password: 'pass123', is_admin: false },
+            { username: 'usuario2', email: 'usuario2@valeria.local', password: 'pass456', is_admin: false }
+        ];
+        
+        mostrarUsuarios();
+    </script>
+</body>
+</html>

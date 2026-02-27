@@ -67,6 +67,11 @@ PERFORMANCE (Total v1-v4):
 ✓ Reintentos automáticos
 """
 
+# ==================== CARGAR VARIABLES DE ENTORNO ====================
+# [MEJORA v4] Cargar .env en desarrollo local (en producción las toma de Render)
+from dotenv import load_dotenv
+load_dotenv()  # Carga .env SI EXISTE, sino usa variables de entorno del sistema
+
 # [MEJORA v2] Imports con type hints
 from fastapi import FastAPI, HTTPException, Request, Depends, status
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -84,7 +89,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, validator
 # [MEJORA v2] Enum para validación segura de países
 from enum import Enum
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 # [MEJORA v2] LRU Cache para mejor performance
 from functools import lru_cache
 from typing import Dict, Optional
@@ -92,6 +97,7 @@ import logging
 import pytz
 import hashlib
 import os
+import threading
 # [MEJORA v3] defaultdict para rate limiting
 from collections import defaultdict
 # [MEJORA v3] Sanitización XSS
@@ -118,10 +124,19 @@ RATE_LIMIT_WINDOW = 60  # segundos
 
 # [MEJORA v3] Variables para control de rate limiting
 request_counts = defaultdict(list)
+# [MEJORA v4] Lock para thread-safety en BD de usuarios
+users_db_lock = threading.Lock()
 
 # ==================== [MEJORA v4] CONFIGURACIÓN JWT ====================
 # [MEJORA v4] Clave secreta para firmar tokens JWT
-SECRET_KEY = os.getenv("SECRET_KEY", "valeria-secret-key-dev-cambiar-produccion")
+# ⚠️ CRÍTICO: En producción, SIEMPRE usar variable de entorno
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    logger.warning("⚠️ ADVERTENCIA: SECRET_KEY no configurada. Usando valor por defecto (INSEGURO en producción)")
+    if os.getenv("ENVIRONMENT") == "production":
+        raise RuntimeError("ERROR CRÍTICO: SECRET_KEY obligatoria en producción. Configura la variable de entorno.")
+    SECRET_KEY = "dev-key-cambiar-en-produccion-123456789"
+
 # [MEJORA v4] Algoritmo de firma
 ALGORITHM = "HS256"
 # [MEJORA v4] Tiempo de expiración de tokens: 60 minutos
@@ -143,24 +158,26 @@ DEFAULT_ADMIN = {
     "is_active": True
 }
 
-# [MEJORA v4] Cargar usuarios de persistencia
+# [MEJORA v4] Cargar usuarios de persistencia con thread-safety
 def cargar_usuarios():
-    """Carga usuarios de archivo JSON."""
+    """Carga usuarios de archivo JSON de forma segura."""
     if USERS_DB_FILE.exists():
         try:
-            with open(USERS_DB_FILE, 'r') as f:
-                return json.load(f)
+            with users_db_lock:  # Prevenir race conditions
+                with open(USERS_DB_FILE, 'r') as f:
+                    return json.load(f)
         except Exception as e:
             logger.error(f"Error cargando usuarios: {str(e)}")
             return {}
     return {}
 
-# [MEJORA v4] Guardar usuarios de persistencia
+# [MEJORA v4] Guardar usuarios de persistencia con thread-safety
 def guardar_usuarios(usuarios: dict):
-    """Guarda usuarios en archivo JSON."""
+    """Guarda usuarios en archivo JSON de forma segura."""
     try:
-        with open(USERS_DB_FILE, 'w') as f:
-            json.dump(usuarios, f, indent=2)
+        with users_db_lock:  # Prevenir race conditions
+            with open(USERS_DB_FILE, 'w') as f:
+                json.dump(usuarios, f, indent=2)
         logger.info("Usuarios guardados correctamente")
     except Exception as e:
         logger.error(f"Error guardando usuarios: {str(e)}")
@@ -192,17 +209,18 @@ if GZIPMiddleware:
     app.add_middleware(GZIPMiddleware, minimum_size=1000)
 
 # [MEJORA v3] 2. CORS - Configuración Segura
+# En producción, configurar CORS_ORIGINS desde variable de entorno
+CORS_ORIGINS = os.getenv(
+    "CORS_ORIGINS", 
+    "http://127.0.0.1:8000,http://localhost:8000,http://localhost:3000"
+).split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://127.0.0.1:8000",
-        "http://localhost:8000",
-        "http://localhost:3000",
-        # Agregar tus dominios aquí en producción
-    ],
-    allow_credentials=False,  # No permitir credenciales en CORS
-    allow_methods=["GET", "HEAD", "OPTIONS"],  # Solo métodos seguros
-    allow_headers=["Content-Type", "Accept"],
+    allow_origins=[origin.strip() for origin in CORS_ORIGINS],
+    allow_credentials=False,  # No permitir credenciales en CORS (usar Authorization header)
+    allow_methods=["GET", "HEAD", "OPTIONS", "POST"],  # POST para autenticación
+    allow_headers=["Content-Type", "Accept", "Authorization"],  # Authorization para JWT
     max_age=600,  # Cache CORS por 10 minutos
     expose_headers=["X-RateLimit-Remaining"],
 )
@@ -344,6 +362,28 @@ class UsuarioRegistro(BaseModel):
     username: str
     email: str
     password: str
+    
+    @validator('username')
+    def username_valido(cls, v):
+        if not v or len(v) < 3 or len(v) > 20:
+            raise ValueError('Username debe tener entre 3 y 20 caracteres')
+        if not v.replace('_', '').replace('-', '').isalnum():
+            raise ValueError('Username solo puede tener letras, números, guiones y guiones bajos')
+        return v.lower()
+    
+    @validator('email')
+    def email_valido(cls, v):
+        if '@' not in v or '.' not in v.split('@')[1]:
+            raise ValueError('Email no tiene formato válido')
+        if len(v) > 100:
+            raise ValueError('Email demasiado largo')
+        return v.lower()
+    
+    @validator('password')
+    def password_valido(cls, v):
+        if len(v) < 6 or len(v) > 50:
+            raise ValueError('Contraseña debe tener entre 6 y 50 caracteres')
+        return v
 
 # ==================== FUNCIONES DE AUTENTICACIÓN ====================
 
@@ -360,9 +400,9 @@ def crear_access_token(data: dict, expires_delta: Optional[timedelta] = None) ->
     to_encode = data.copy()
     
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     
     to_encode.update({"exp": expire})
     
@@ -879,6 +919,12 @@ def read_root(request: Request):
         <button class="theme-toggle" id="themeToggle" aria-label="Cambiar theme" title="Dark Mode">🌙</button>
         
         <div class="container">
+            <!-- [v5.2] Reloj grande en tiempo real -->
+            <div class="reloj-grande" style="text-align: center; margin-bottom: 30px; padding: 30px 20px; background: rgba(255, 255, 255, 0.08); backdrop-filter: blur(10px); border: 2px solid rgba(255, 255, 255, 0.2); border-radius: 20px; box-shadow: 0 8px 32px rgba(31, 38, 135, 0.3);">
+                <div style="font-size: 4em; font-weight: 900; color: #23d5ab; font-family: 'Courier New', monospace; letter-spacing: 3px; text-shadow: 0 0 20px rgba(35, 213, 171, 0.8); animation: digitalPulse 1s infinite;" id="horaGrande">00:00:00</div>
+                <div style="font-size: 1.2em; color: #ffffff; margin-top: 10px; opacity: 0.8; letter-spacing: 1px;" id="fechaGrande">--/--/----</div>
+            </div>
+            
             <h1>🌍 VALERIA ⏰</h1>
             
             <div class="input-container">
@@ -1067,12 +1113,34 @@ def read_root(request: Request):
                 }
             }
             
+            // ========== ACTUALIZAR RELOJ GRANDE [v5.2] ==========
+            function actualizarRelojGrande() {
+                const ahora = new Date();
+                const horas = String(ahora.getHours()).padStart(2, '0');
+                const minutos = String(ahora.getMinutes()).padStart(2, '0');
+                const segundos = String(ahora.getSeconds()).padStart(2, '0');
+                const hora = `${horas}:${minutos}:${segundos}`;
+                
+                const dia = String(ahora.getDate()).padStart(2, '0');
+                const mes = String(ahora.getMonth() + 1).padStart(2, '0');
+                const anio = ahora.getFullYear();
+                const fecha = `${dia}/${mes}/${anio}`;
+                
+                const horaGrande = document.getElementById('horaGrande');
+                const fechaGrande = document.getElementById('fechaGrande');
+                
+                if (horaGrande) horaGrande.textContent = hora;
+                if (fechaGrande) fechaGrande.textContent = fecha;
+            }
+            
             // ========== INICIALIZACIÓN ==========
             document.addEventListener('DOMContentLoaded', function() {
                 crearTarjetas();
                 cargarPaisesDisponibles();
                 actualizarHoras();
+                actualizarRelojGrande();
                 setInterval(actualizarHoras, 1000);
+                setInterval(actualizarRelojGrande, 1000);
                 
                 const paisInput = document.getElementById('paisInput');
                 if (paisInput) {
@@ -1562,6 +1630,8 @@ async def pagina_login():
     </body>
     </html>
     """)
+
+@app.post("/api/v1/auth/login")
 async def login(credenciales: LoginRequest, request: Request):
     """
     Endpoint de login que retorna un JWT token.
@@ -2047,6 +2117,11 @@ if __name__ == "__main__":
     logger.info("   Usuario: admin")
     logger.info("   Password: admin123")
     logger.info("   ⚠️  CAMBIAR EN PRODUCCIÓN")
+    logger.info("=" * 70)
+    logger.info("⚙️  VARIABLES DE ENTORNO RECOMENDADAS:")
+    logger.info("   SECRET_KEY=<clave-segura-aleatoria-64-caracteres>")
+    logger.info("   CORS_ORIGINS=https://tudominio.com,https://www.tudominio.com")
+    logger.info("   ENVIRONMENT=production (si es producción)")
     logger.info("=" * 70)
     logger.info("📍 ENDPOINTS PÚBLICOS:")
     logger.info("   GET  /              (Página principal)")

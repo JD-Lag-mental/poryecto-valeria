@@ -2,7 +2,7 @@
   "admin": {
     "username": "admin",
     "email": "admin@valeria.local",
-    "hashed_password": null,
+    "hashed_password": "$2b$12$DV5uhnMk14QeKCQaRQKhwubWHXiibYdyA5AS8I1BFQ8TSloMCTX/K",
     "is_admin": true,
     "is_active": true
   }
